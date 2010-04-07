@@ -173,13 +173,11 @@ module RR
       end
 
       def bind_method
-        subject = @subject.is_a?(Class) && !@subject.name.to_s.empty? ? @subject.name : "self"
-        subject_class.class_eval(<<-METHOD, __FILE__, __LINE__ + 1)
-        def #{@method_name}(*args, &block)
+        subject, method_name = @subject, @method_name
+        subject_class.send(:define_method, method_name) do |*args, &block|
           arguments = MethodArguments.new(args, block)
-          RR::Injections::DoubleInjection.create(#{subject}, :#{@method_name}).dispatch_method(arguments.arguments, arguments.block)
+          RR::Injections::DoubleInjection.create(subject || self, method_name.to_sym).dispatch_method(arguments.arguments, arguments.block)
         end
-        METHOD
       end
     end
   end
